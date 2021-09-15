@@ -18,6 +18,8 @@ void view_words();
 void about_game();
 bool check_word(std::string spanish_word);
 std::string capitalise(std::string);
+bool verify(std::string, std::string);
+bool default_verify(std::string, std::string);
 
 
 int option{ 1 };
@@ -82,10 +84,40 @@ void display_menu() {
 
 void play_game() {
     std::string player_name{};
+    int high_score{ 0 }, word_source{};
 
     system("CLS");
     std::cout << "WELCOME PLAYER\nEnter your nick_name:" << std::endl;
     std::getline(std::cin,player_name);
+    player_name = capitalise(player_name);
+
+    system("CLS");
+    std::cout << "WELCOME " << player_name << " TO THE VOCABULARY GAME\n\nCHOOSE A WORD SOURCE\n";
+    std::cout << "1 - DEFAULT WORD BANK\n2 - MY WORD BANK (must have minimum of 50 words)\nOPTION: ";
+    std::cin >> word_source;
+
+    switch (word_source)
+    {
+        case 1:
+        {
+
+        }
+        break;
+
+        case 2:
+        {
+
+        }
+        break;
+    }
+
+}
+
+bool verify(std::string spanish, std::string english) {
+
+}
+
+bool default_verify(std::string spanish, std::string english) {
 
 }
 
