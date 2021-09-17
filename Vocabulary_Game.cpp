@@ -20,14 +20,15 @@ void view_words();
 void about_game();
 bool check_word(std::string spanish_word);
 std::string capitalise(std::string);
-bool verify(std::string, std::string);
-bool default_verify(std::string, std::string);
 double score_percent( int ,int );
 void insert_no_highscore();
 size_t check_word_count();
 double play_default(int,std::string);
-double play_main(int);
+double play_main(int,std::string);
 
+//So, after the user has finished the session, there can be an option for him to retry the ones that he missedà
+//He can keep on playing the ones he misses after this till he decides to quit.
+//When he gets the words, they leave the pool of the æmissed words
 
 int option{ 1 };//universal variable...
 
@@ -107,7 +108,7 @@ void play_game() {
     {
         case 1:
         {
-            int attempts{ 0 };
+        defaults: int attempts{ 0 };
             double highscore{}, current_score{};
 
             std::string h_score{}, substr{};
@@ -173,14 +174,104 @@ void play_game() {
 
         case 2:
         {
+            size_t number{};
+            int attempts{ 0 }, option{};
+            double highscore{}, current_score{};
 
+            std::string h_score{}, substr{};
+            std::vector<std::string>result;
+            double current_highscore{};
+
+            number = check_word_count();
+            if (number < 50) {
+                std::cout << "YOU NEED 50 WORDS TO PLAY WITH YOUR WORD SOURCE, YOU HAVE: " << number << std::endl;
+                std::cout << "1 - PLAY WITH DEFAULT\n2 - RETURN TO HOME MENU\nOPTION: ";
+                std::cin >> option;
+                switch (option)
+                {
+                    case 1:
+                    {
+                        system("CLS");
+                        goto defaults;
+                    }
+                    break;
+                    case 2:
+                    {
+                        system("CLS");
+                        display_menu();
+                    }
+                    break;
+                    default:
+                    {
+                        std::cout << "INVALID OPTION\n";
+                    }
+                }
+            }
+
+            else {
+                std::cout << player_name << " WELCOME\nCurrent Highscore: ";
+
+                std::ifstream in_file;
+                in_file.open("words.txt");
+
+                //first read out the high score...
+                std::getline(in_file, h_score);
+                std::stringstream s_stream(h_score);
+
+                while (s_stream.good()) {
+                    std::getline(s_stream, substr, ',');
+                    result.push_back(substr);
+                }
+                std::cout << result.at(0) << " with " << result.at(1) << " %" << std::endl;
+                current_highscore = stod(result.at(1));
+
+                //Now to the playing of the game..
+                std::cout << std::endl;
+                std::cout << "HOW MANY WORDS WOULD YOU LIKE TO ATTEMPT?\nOPTION: ";
+                std::cin >> attempts;
+                in_file.close();
+
+                current_score = play_default(attempts, player_name);
+                if (current_score >= current_highscore) {
+                    std::cout << "NEW HIGHSCORE!\n" << player_name << " : " << current_score << " %" << std::endl;
+                    std::ifstream in_file;
+
+                    in_file.open("default_words.txt");
+                    std::vector<std::string> lines;
+                    std::string line{};
+
+                    while (std::getline(in_file, line)) {
+                        lines.push_back(line);
+                    }
+                    in_file.close();
+
+                    std::ofstream out_file("temp.txt");
+
+                    out_file << player_name << "," << current_score << std::endl;
+                    for (size_t i{ 1 }; i < lines.size(); i++) {
+                        out_file << lines.at(i) << std::endl;
+                    }
+                    out_file.close();
+                    remove("default_words.txt");
+                    rename("temp.txt", "default_words.txt");
+                }
+
+                else {
+                    std::cout << "YOUR SCORE IS: " << current_score << " %" << std::endl;
+                }
+            }
         }
         break;
+
+        default:
+        {
+            std::cout << "KINDLY ENTER A VALID OPTION" << std::endl;
+        }
     }
 
 }
 
-double play_default(int attempts,std::string ) {
+double play_default(int attempts,std::string player_name) {
     std::string line{}, h_score{}, current_line{};
     size_t game_size{};
     int trial{ attempts }, pos;
@@ -226,7 +317,7 @@ double play_default(int attempts,std::string ) {
             std::cout << "\nCORRECT!\n\n";
         }
         else {
-            std::cout << "\nINCORRECT! (ANSWER: "<<result.at(1)<<"\n\n";
+            std::cout << "\nINCORRECT! (ANSWER: "<<result.at(1)<<" ) \n\n";
         }
 
         trial--;
@@ -237,22 +328,61 @@ double play_default(int attempts,std::string ) {
     return percentage;
 }
 
-double play_main(int attempts) {
-    double percent{};
+double play_main(int attempts,std::string ) {
+    std::string line{}, h_score{}, current_line{};
+    size_t game_size{};
+    int trial{ attempts }, pos;
+    double score{ 0 }, expected_score{}, percentage{};
 
-    return percent;
-}
+    expected_score = attempts * 10;
 
-bool verify(std::string spanish, std::string english) {
-    bool status{ false };
+    std::ifstream in_file;
+    in_file.open("words.txt");
 
-    return status;
-}
+    std::vector<std::string>entry;
+    std::vector<std::string>default_failed;
 
-bool default_verify(std::string spanish, std::string english) {
-    bool status{ false };
+    std::getline(in_file, h_score);
+    while (std::getline(in_file, line)) {
+        entry.push_back(line);
+    }
 
-    return status;
+    game_size = entry.size();
+    std::cin.ignore(1, '\n');
+
+    while (trial > 0) {
+        srand(time(nullptr));
+        pos = rand() % game_size;
+        current_line = entry.at(pos);
+
+        std::string english{};
+        std::stringstream s_stream(current_line);
+        std::string substr{};
+        std::vector<std::string> result;
+
+        while (s_stream.good()) {
+            std::getline(s_stream, substr, ',');
+            result.push_back(substr);
+        }
+
+
+        std::cout << result.at(0) << ": ";
+        std::getline(std::cin, english);
+        english = capitalise(english);
+        if (english == result.at(1)) {
+            score += 10;
+            std::cout << "\nCORRECT!\n\n";
+        }
+        else {
+            std::cout << "\nINCORRECT! (ANSWER: " << result.at(1) << " ) \n\n";
+        }
+
+        trial--;
+    }
+    percentage = (score / expected_score) * 100;
+
+    in_file.close();
+    return percentage;
 }
 
 double score_percent(int attempts, int score) {
@@ -391,7 +521,7 @@ void view_words() {
 }
 
 void about_game() {
-    std::cout<<"	Vocabulary Chase\nUse Default word Bank(The user can use the word bank in the.txt file that accompanies the application).\nUse Your Word Bank(will not work except you have 50 words available).\nGAME MODES AVAILABLE\nFirstly, the user can choose to use the default word bank, or rather use his own word bank(which must have up to 50 words before this operation can run)\nEach correct try is 10 points.\nEach wrong try is - 10 points\nEach time, the user chooses how many words he wants to attempt today.\nThe High score is usually stored but in terms of percentage accuracy.It is usually displayed on attempt of a new game\nWords that are missed are movedand stored in a.txt file…\nSo, after the user has finished the session, there can be an option for him to retry the ones that he missed…\nHe can keep on playing the ones he misses after this till he decides to quit.\nWhen he gets the words, they leave the pool of the ‘missed words’.\nThen if the user beats the high score, there is now a new high score…\nIt is officially Game Over…(I think this should happen when he misses 50 % of his planned attempts)"<<std::endl<<std::endl;
+    std::cout << "	Vocabulary Chase\nUse Default word Bank(The user can use the word bank in the.txt file that accompanies the application).\nUse Your Word Bank(will not work except you have 50 words available).\nGAME MODES AVAILABLE\nFirstly, the user can choose to use the default word bank, or rather use his own word bank(which must have up to 50 words before this operation can run)\nEach time, the user chooses how many words he wants to attempt.\nThe High score is usually stored but in terms of percentage.It is usually displayed on attempt of a new game\nWords that are missed are moved and stored in a.txt file…\nSo, after the user has finished the session, there can be an option for him to retry the ones that he missed…\nHe can keep on playing the ones he misses after this till he decides to quit.\nWhen he gets the words, they leave the pool of the ‘missed words’.\nThen if the user beats the high score, there is now a new high score…" << std::endl << std::endl;
 }
 
 bool check_word(std::string spanish_word) {
