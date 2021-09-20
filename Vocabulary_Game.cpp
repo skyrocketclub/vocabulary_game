@@ -24,6 +24,8 @@ void insert_no_highscore();
 size_t check_word_count();
 double play_default(int,std::string);
 double play_main(int,std::string);
+int random_int(int game_size);
+bool find_pos(int pos, std::vector<int> used);
 
 //So, after the user has finished the session, there can be an option for him to retry the ones that he missed
 //He can keep on playing the ones he misses after this till he decides to quit.
@@ -134,7 +136,7 @@ void play_game() {
     std::string entry{};
     bool done{ false };
     do {
-        std::cout << "OPTION: ";
+        
         std::cin >> entry;
         std::istringstream validator{ entry };
         if (validator >> word_source) {
@@ -319,12 +321,11 @@ void play_game() {
 double play_default(int attempts,std::string player_name) {
     std::string line{}, h_score{}, current_line{};
     size_t game_size{};
-    int trial{ attempts }, pos;
+    int trial{ 0 }, pos;
     double score{ 0 }, expected_score{}, percentage{};
     std::vector <std::string> missed;
+    std::vector<int> used;
     std::vector<std::string>missed_temp{};
-
-    expected_score = attempts * 10;
 
     std::ifstream in_file;
     in_file.open("default_words.txt");
@@ -333,16 +334,32 @@ double play_default(int attempts,std::string player_name) {
     std::vector<std::string>default_failed;
 
     std::getline(in_file, h_score);
+
     while (std::getline(in_file, line)) {
         entry.push_back(line);
     }
 
     game_size = entry.size();
+    if (attempts > game_size) {
+        attempts = game_size;
+        std::cout << "YOU HAVE A MAXIMUM OF " << game_size << " ATTEMPTS\n";
+    }
+
+    trial = attempts;
+    expected_score = attempts * 10;
+
     std::cin.ignore(1, '\n');
 
     while (trial > 0) {
-        srand(time(nullptr));
-        pos = rand() % game_size ; 
+        pos = random_int(game_size);
+
+        while (find_pos(pos, used)) {
+            pos = random_int(game_size);
+        }
+
+        //add random to used
+        used.push_back(pos);
+
         current_line = entry.at(pos);
 
         std::string english{};
@@ -385,7 +402,7 @@ double play_default(int attempts,std::string player_name) {
                 missed_temp.clear();
 
                 std::cout << std::endl << std::endl;
-                retry_opt_retry: std::cout << " WOULD YOU LIKE TO RETRY THE MISSED ATTEMPTS?\n1 - YES\n2 - NO\nOPTION: ";
+                retry_opt_retry: std::cout << " WOULD YOU LIKE TO RETRY THE MISSED ATTEMPTS?\n1 - YES\n2 - NO\n";
 
 
                 //DATA VALIDATION
@@ -459,12 +476,32 @@ double play_default(int attempts,std::string player_name) {
     return percentage;
 }
 
+int random_int(int game_size) {
+    srand(time(nullptr));
+    return rand() % game_size;
+}
+
+bool find_pos(int pos, std::vector<int> used) {
+
+    std::vector<int>::iterator it;
+
+    it = std::find(used.begin(), used.end(), pos);
+
+    if (it != used.end()) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
 double play_main(int attempts,std::string ) {
     std::string line{}, h_score{}, current_line{};
     size_t game_size{};
     int trial{ attempts }, pos;
     double score{ 0 }, expected_score{}, percentage{};
     std::vector <std::string> missed;
+    std::vector<int> used;
     std::vector<std::string>missed_temp{};
 
     expected_score = attempts * 10;
@@ -484,8 +521,16 @@ double play_main(int attempts,std::string ) {
     std::cin.ignore(1, '\n');
 
     while (trial > 0) {
-        srand(time(nullptr));
-        pos = rand() % game_size;
+        
+        pos = random_int(game_size);
+
+        while (find_pos(pos, used)) {
+            pos = random_int(game_size);
+        }
+        
+        //add random to used
+        used.push_back(pos);
+
         current_line = entry.at(pos);
 
         std::string english{};
@@ -529,7 +574,7 @@ double play_main(int attempts,std::string ) {
                 missed_temp.clear();
 
                 std::cout << std::endl << std::endl;
-                retry_again:std::cout << " WOULD YOU LIKE TO RETRY THE MISSED ATTEMPTS?\n1 - YES\n2 - NO\nOPTION: ";
+                retry_again:std::cout << " WOULD YOU LIKE TO RETRY THE MISSED ATTEMPTS?\n1 - YES\n2 - NO\n: ";
 
                 //DATA VALIDATION
                 std::string entry{};
