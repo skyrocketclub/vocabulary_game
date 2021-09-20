@@ -20,13 +20,12 @@ void view_words();
 void about_game();
 bool check_word(std::string spanish_word);
 std::string capitalise(std::string);
-double score_percent( int ,int );
 void insert_no_highscore();
 size_t check_word_count();
 double play_default(int,std::string);
 double play_main(int,std::string);
 
-//So, after the user has finished the session, there can be an option for him to retry the ones that he missedà
+//So, after the user has finished the session, there can be an option for him to retry the ones that he missed
 //He can keep on playing the ones he misses after this till he decides to quit.
 //When he gets the words, they leave the pool of the æmissed words
 
@@ -44,8 +43,26 @@ void display_menu() {
 
     if (option == 1) {
         int choice{};
-        std::cout << "1 - PLAY GAME\n2 - ADD NEW WORDS\n3 - VIEW ALL WORDS\n4 - ABOUT GAME\n0 - QUIT\nOPTION: ";
-        std::cin >> choice;
+        std::cout << "1 - PLAY GAME\n2 - ADD NEW WORDS\n3 - VIEW ALL WORDS\n4 - ABOUT GAME\n0 - QUIT\n";
+
+        std::string entry{};
+        bool done{ false };
+        do {
+            std::cout << "OPTION: ";
+            std::cin >> entry;
+            std::istringstream validator{ entry };
+            if (validator >> choice) {
+                done = true;
+            }
+            else {
+                std::cout << "KINDLY ENTER A VALID INPUT\n";
+                std::cin.ignore(std::numeric_limits<std::streamsize> ::max(), '\n');
+            }
+
+
+        } while (!done);
+
+      
 
         switch (choice)
         {
@@ -93,6 +110,7 @@ void display_menu() {
 void play_game() {
     std::string player_name{}, h_score{};
     int word_source{}; 
+    size_t num = check_word_count();
     system("CLS");
     std::cout << "WELCOME PLAYER\nEnter your nick_name:" << std::endl;
     std::cin.ignore(1, '\n');
@@ -101,8 +119,34 @@ void play_game() {
 
     system("CLS");
     std::cout << "WELCOME " << player_name << " TO THE VOCABULARY GAME\n\nCHOOSE A WORD SOURCE\n";
-    std::cout << "1 - DEFAULT WORD BANK\n2 - MY WORD BANK (must have minimum of 50 words)\nOPTION: ";
-    std::cin >> word_source;
+    std::cout << "1 - DEFAULT WORD BANK\n";
+    std::cout<<"2 - MY WORD BANK ";
+    if (num < 50) {
+        std::cout << " (NOT CURRENTLY AVAILBLE - YOU NEED " << 50 - num << " MORE WORDS)\n";
+    }
+
+    else {
+        std::cout << " (AVAILABLE)\n";
+    }
+   word_source_retry: std::cout << "OPTION: ";
+
+    //DATA VALIDATION
+    std::string entry{};
+    bool done{ false };
+    do {
+        std::cout << "OPTION: ";
+        std::cin >> entry;
+        std::istringstream validator{ entry };
+        if (validator >> word_source) {
+            done = true;
+        }
+        else {
+            std::cout << "KINDLY ENTER A VALID INPUT\n";
+            std::cin.ignore(std::numeric_limits<std::streamsize> ::max(), '\n');
+        }
+    } while (!done);
+
+
 
     switch (word_source)
     {
@@ -266,6 +310,7 @@ void play_game() {
         default:
         {
             std::cout << "KINDLY ENTER A VALID OPTION" << std::endl;
+            goto word_source_retry;
         }
     }
 
@@ -276,6 +321,8 @@ double play_default(int attempts,std::string player_name) {
     size_t game_size{};
     int trial{ attempts }, pos;
     double score{ 0 }, expected_score{}, percentage{};
+    std::vector <std::string> missed;
+    std::vector<std::string>missed_temp{};
 
     expected_score = attempts * 10;
 
@@ -318,11 +365,95 @@ double play_default(int attempts,std::string player_name) {
         }
         else {
             std::cout << "\nINCORRECT! (ANSWER: "<<result.at(1)<<" ) \n\n";
+            missed_temp.push_back(current_line);
         }
 
         trial--;
     }
     percentage = (score / expected_score) * 100;
+
+    missed = missed_temp;
+    size_t misses = missed.size();
+    bool retry{ true };
+    int retry_opt{};
+
+    if (misses > 0) {
+
+        while (retry == true) {
+            do {
+                missed = missed_temp;
+                missed_temp.clear();
+
+                std::cout << std::endl << std::endl;
+                retry_opt_retry: std::cout << " WOULD YOU LIKE TO RETRY THE MISSED ATTEMPTS?\n1 - YES\n2 - NO\nOPTION: ";
+
+
+                //DATA VALIDATION
+                std::string entry{};
+                bool done{ false };
+                do {
+                    std::cout << "OPTION: ";
+                    std::cin >> entry;
+                    std::istringstream validator{ entry };
+                    if (validator >> retry_opt) {
+                        done = true;
+                    }
+                    else {
+                        std::cout << "KINDLY ENTER A VALID INPUT\n";
+                        std::cin.ignore(std::numeric_limits<std::streamsize> ::max(), '\n');
+                    }
+                } while (!done);
+
+             
+                std::cin.ignore(1, '\n');
+
+                if (retry_opt == 1) {
+                    system("CLS");
+                    for (size_t i{ 0 }; i < missed.size(); i++) {
+                        std::string english_missed;
+                        std::string spanish_missed;
+                        std::string substr_missed;
+                        std::stringstream s_stream(missed.at(i));
+                        std::vector<std::string>result_missed;
+
+                        while (s_stream.good()) {
+                            std::getline(s_stream, substr_missed, ',');
+                            result_missed.push_back(substr_missed);
+                        }
+
+                        std::cout << result_missed.at(0) << ": ";
+                        std::getline(std::cin, english_missed);
+                        english_missed = capitalise(english_missed);
+
+                        if (english_missed == result_missed.at(1)) {
+                            std::cout << "CORRECT! " << std::endl;
+                        }
+
+                        else {
+                            std::cout << "INCORRECT! (ANSWER: " << result_missed.at(1) << " )" << std::endl;
+                            missed_temp.push_back(missed.at(i));
+                        }
+                        std::cout << std::endl;
+                    }
+                    retry = true;
+                    if (missed_temp.size() == 0) {
+                        retry = false;
+                    }
+                }
+                else if (retry_opt == 2) {
+                    retry = false;
+                }
+                else {
+                    std::cout << "KINDLY ENTER A VALID INPUT\n";
+                    goto retry_opt_retry;
+                }
+            } while (missed_temp.size() > 0);
+        }
+    }
+
+    else {
+
+    }
 
     in_file.close();
     return percentage;
@@ -333,6 +464,8 @@ double play_main(int attempts,std::string ) {
     size_t game_size{};
     int trial{ attempts }, pos;
     double score{ 0 }, expected_score{}, percentage{};
+    std::vector <std::string> missed;
+    std::vector<std::string>missed_temp{};
 
     expected_score = attempts * 10;
 
@@ -375,19 +508,93 @@ double play_main(int attempts,std::string ) {
         }
         else {
             std::cout << "\nINCORRECT! (ANSWER: " << result.at(1) << " ) \n\n";
+            missed_temp.push_back(current_line);
         }
 
         trial--;
     }
     percentage = (score / expected_score) * 100;
 
+
+    missed = missed_temp;
+    size_t misses = missed.size();
+    bool retry{ true };
+    int retry_opt{};
+
+    if (misses > 0) {
+
+        while (retry == true) {
+            do {
+                missed = missed_temp;
+                missed_temp.clear();
+
+                std::cout << std::endl << std::endl;
+                retry_again:std::cout << " WOULD YOU LIKE TO RETRY THE MISSED ATTEMPTS?\n1 - YES\n2 - NO\nOPTION: ";
+
+                //DATA VALIDATION
+                std::string entry{};
+                bool done{ false };
+                do {
+                    std::cout << "OPTION: ";
+                    std::cin >> entry;
+                    std::istringstream validator{ entry };
+                    if (validator >> retry_opt) {
+                        done = true;
+                    }
+                    else {
+                        std::cout << "KINDLY ENTER A VALID INPUT\n";
+                        std::cin.ignore(std::numeric_limits<std::streamsize> ::max(), '\n');
+                    }
+                } while (!done);
+
+              
+                std::cin.ignore(1, '\n');
+
+                if (retry_opt == 1) {
+                    system("CLS");
+                    for (size_t i{ 0 }; i < missed.size(); i++) {
+                        std::string english_missed;
+                        std::string spanish_missed;
+                        std::string substr_missed;
+                        std::stringstream s_stream(missed.at(i));
+                        std::vector<std::string>result_missed;
+
+                        while (s_stream.good()) {
+                            std::getline(s_stream, substr_missed, ',');
+                            result_missed.push_back(substr_missed);
+                        }
+
+                        std::cout << result_missed.at(0) << ": ";
+                        std::getline(std::cin, english_missed);
+                        english_missed = capitalise(english_missed);
+
+                        if (english_missed == result_missed.at(1)) {
+                            std::cout << "CORRECT! " << std::endl;
+                        }
+
+                        else {
+                            std::cout << "INCORRECT! (ANSWER: " << result_missed.at(1) << " )" << std::endl;
+                            missed_temp.push_back(missed.at(i));
+                        }
+                        std::cout << std::endl;
+                    }
+                    retry = true;
+                    if (missed_temp.size() == 0) {
+                        retry = false;
+                    }
+                }
+                else if (retry_opt == 2) {
+                    retry = false;
+                }
+                else {
+                    std::cout << "KINDLY ENTER A VALID INPUT\n";
+                    goto retry_again;
+                }
+            } while (missed_temp.size() > 0);
+        }
+    }
+
     in_file.close();
-    return percentage;
-}
-
-double score_percent(int attempts, int score) {
-    double percentage{ 0.0 };
-
     return percentage;
 }
 
@@ -438,35 +645,58 @@ void add_word() {
     }
     else {
 
-        std::cout << "How many words would you like to add?" << std::endl<<"Option: ";
-        std::cin >> number;             
-        std::cin.ignore(1, '\n');
+        std::cout << "How many words would you like to add?" << std::endl;  
+             
 
-        for (int i{ 0 }; i < number; i++) {
-           
-          
-            std::cout <<std::endl<< "Spanish Word: ";
-            std::getline(std::cin, spanish);
-            spanish = capitalise(spanish);
+        //DATA VALIDATION
 
-            out_file.close();
-            status = check_word(spanish);
-            out_file.open("words.txt", std::ios::app);
+        bool done{ false };
+        std::string entry;
 
-            //meaning the word is not already available
-            if (status == false) {
-                std::cout << "English word: ";
-                std::getline(std::cin, english);
-                english = capitalise(english);
-
-                out_file << spanish << "," << english << std::endl;
+        do {
+            std::cout << "Option: ";
+            std::cin >> entry;
+            std::istringstream validator{ entry };
+            if(validator >> number) {
+                done = true;  
             }
             else {
-                std::cout << spanish << " is already in your collection" << std::endl;
+                std::cout << "KINDLY ENTER A VALID INPUT\n";
+                std::cin.ignore(std::numeric_limits <std::streamsize> ::max(), '\n');
             }
-             
-        }
-        std::cout << "Words Successfully added!" << std::endl;
+        } while (!done);
+
+        std::cin.ignore(1, '\n');
+
+        if (number > 0) {
+            for (int i{ 0 }; i < number; i++) {
+
+
+                std::cout << std::endl << "Spanish Word: ";
+                std::getline(std::cin, spanish);
+                spanish = capitalise(spanish);
+
+                out_file.close();
+                status = check_word(spanish);
+                out_file.open("words.txt", std::ios::app);
+
+                //meaning the word is not already available
+                if (status == false) {
+                    std::cout << "English word: ";
+                    std::getline(std::cin, english);
+                    english = capitalise(english);
+
+                    out_file << spanish << "," << english << std::endl;
+                }
+                else {
+                    std::cout << spanish << " is already in your collection" << std::endl;
+                }
+
+            }
+            std::cout << "Words Successfully added!" << std::endl;
+       }
+
+        
         out_file.close();
     }
 }
@@ -521,7 +751,8 @@ void view_words() {
 }
 
 void about_game() {
-    std::cout << "	Vocabulary Chase\nUse Default word Bank(The user can use the word bank in the.txt file that accompanies the application).\nUse Your Word Bank(will not work except you have 50 words available).\nGAME MODES AVAILABLE\nFirstly, the user can choose to use the default word bank, or rather use his own word bank(which must have up to 50 words before this operation can run)\nEach time, the user chooses how many words he wants to attempt.\nThe High score is usually stored but in terms of percentage.It is usually displayed on attempt of a new game\nWords that are missed are moved and stored in a.txt file…\nSo, after the user has finished the session, there can be an option for him to retry the ones that he missed…\nHe can keep on playing the ones he misses after this till he decides to quit.\nWhen he gets the words, they leave the pool of the ‘missed words’.\nThen if the user beats the high score, there is now a new high score…" << std::endl << std::endl;
+    system("CLS");
+    std::cout << "	Vocabulary Chase\n1 - Use Default word Bank(The user can use the word bank in the .txt file that accompanies the  application).\n2 - Use Your Word Bank(will not work except you have 50 words available).\n GAME MODES AVAILABLE\n3 - Firstly, the user can choose to use the default word bank, or rather use his own word bank(which must have up to 50 words before this operation can run)\n4 - ANY WORDS ADDED MUST FOLLOW THIS FORMAT --> SPANISH,ENGLISH  <-- \n5 - Each time, the user chooses how many words he wants to attempt.\n6 - The High score is usually stored in percentage.It is usually displayed on attempt of a new game\n7 - Words that are missed are stored…\n8 - So, after the user has finished the session, there can be an option for him to retry the ones that he missed…\n9 - He can keep on playing the ones he misses after this till he decides to quit.\n10 - When he gets the words, they leave the pool of the ‘missed words’.\n11 - Then if the user beats or meets the high score, there is now a new high score…" << std::endl << std::endl;
 }
 
 bool check_word(std::string spanish_word) {
